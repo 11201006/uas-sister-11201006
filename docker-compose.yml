@@ -1,33 +1,39 @@
+version: "3.9"
+
 services:
-  aggregator:
-    build: ./aggregator
-    environment:
-      DATABASE_URL: postgres://user:pass@storage:5432/db
-      BROKER_URL: redis://broker:6379
-    depends_on: [broker, storage]
-    ports:
-      - "8080:8080"
-
-  publisher:
-    build: ./publisher
-    depends_on: [aggregator]
-    environment:
-      TARGET_URL: http://aggregator:8080/publish
-
-  broker:
-    image: redis:7-alpine
-    volumes:
-      - broker_data:/data
-
   storage:
     image: postgres:16-alpine
+    container_name: storage
     environment:
       POSTGRES_DB: db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  aggregator:
+    build: ./aggregator
+    container_name: aggregator
+    environment:
+      DATABASE_URL: postgresql://user:pass@storage:5432/db
+    depends_on:
+      storage:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  publisher:
+    build: ./publisher
+    container_name: publisher
+    environment:
+      TARGET_URL: http://aggregator:8080/publish
+    depends_on:
+      - aggregator
 
 volumes:
   pg_data:
-  broker_data:

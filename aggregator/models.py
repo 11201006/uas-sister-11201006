@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Dict
-from datetime import datetime
 
 class Event(BaseModel):
     topic: str

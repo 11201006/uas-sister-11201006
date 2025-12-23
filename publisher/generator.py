@@ -1,28 +1,34 @@
-import requests
+import os
+import json
 import uuid
-import random
-from datetime import datetime
 import time
+import requests
+import threading
+from datetime import datetime
 
-TARGET = "http://aggregator:8080/publish"
+TARGET = os.getenv("TARGET_URL")
 
 def run():
-    topics = ["auth", "billing", "user"]
     while True:
-        event_id = str(uuid.uuid4())
-        topic = random.choice(topics)
-
         payload = {
-            "topic": topic,
-            "event_id": event_id,
+            "topic": "system",
+            "event_id": str(uuid.uuid4()),
             "timestamp": datetime.utcnow().isoformat(),
             "source": "publisher",
-            "payload": { "value": random.randint(1,100) }
+            "payload": {"value": "log test"}
         }
-        requests.post(TARGET, json=payload)
 
-        # send duplicates sometimes
-        if random.random() < 0.3:
+        try:
             requests.post(TARGET, json=payload)
+        except Exception as e:
+            print("failed:", e)
 
-        time.sleep(0.05)
+        time.sleep(0.01)
+
+
+if __name__ == "__main__":
+    for _ in range(3):
+        threading.Thread(target=run, daemon=True).start()
+
+    while True:
+        time.sleep(1)
