@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Any
 
-class Event(BaseModel):
+class EventModel(BaseModel):
     topic: str
     event_id: str
     timestamp: str
     source: str
-    payload: Dict
+    payload: Dict[str, Any]

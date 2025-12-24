@@ -1,34 +1,31 @@
-import os
-import json
-import uuid
 import time
+import uuid
 import requests
+import random
 import threading
-from datetime import datetime
 
-TARGET = os.getenv("TARGET_URL")
+TARGET = "http://aggregator:8080/publish"
 
-def run():
+def generate_event():
+    return {
+        "topic": random.choice(["alpha", "beta", "gamma"]),
+        "event_id": str(uuid.uuid4()),
+        "timestamp": "2025-01-01T10:00:00Z",
+        "source": "publisher",
+        "payload": {"value": random.randint(1, 100)}
+    }
+
+def worker():
     while True:
-        payload = {
-            "topic": "system",
-            "event_id": str(uuid.uuid4()),
-            "timestamp": datetime.utcnow().isoformat(),
-            "source": "publisher",
-            "payload": {"value": "log test"}
-        }
-
         try:
-            requests.post(TARGET, json=payload)
-        except Exception as e:
-            print("failed:", e)
-
-        time.sleep(0.01)
-
+            ev = generate_event()
+            requests.post(TARGET, json=ev)
+        except:
+            pass
+        time.sleep(0.05)
 
 if __name__ == "__main__":
-    for _ in range(3):
-        threading.Thread(target=run, daemon=True).start()
-
+    for _ in range(5):
+        threading.Thread(target=worker, daemon=True).start()
     while True:
         time.sleep(1)
